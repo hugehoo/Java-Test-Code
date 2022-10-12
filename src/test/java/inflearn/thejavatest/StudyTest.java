@@ -1,12 +1,18 @@
 package inflearn.thejavatest;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumingThat;
 
 
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
@@ -85,5 +91,24 @@ class StudyTest {
             new Study(10);
             Thread.sleep(190);
         });
+    }
+
+    @Test
+    @EnabledOnOs(OS.MAC)
+    @EnabledIfEnvironmentVariable(named="TEST_ENV", matches = "LOCAL")
+    void test_environment_variable() {
+        String test_env = System.getenv("TEST_ENV");
+        System.out.println(test_env);
+        assumeTrue("LOCAL".equalsIgnoreCase(test_env));
+        assumingThat("LOCAL".equalsIgnoreCase(test_env), () -> {
+            Study study = new Study(199);
+            assertTrue(study.getLimit() > 10);
+        });
+    }
+
+    @Test
+    @DisabledOnOs(OS.MAC)
+    void test_depends_OS() {
+        System.out.println("not working");
     }
 }
