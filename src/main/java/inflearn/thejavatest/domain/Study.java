@@ -1,4 +1,6 @@
-package inflearn.thejavatest;
+package inflearn.thejavatest.domain;
+
+import inflearn.thejavatest.StudyStatus;
 
 public class Study {
 
@@ -36,5 +38,8 @@ public class Study {
 
     public String getName() {
         return name;
+    }
+
+    public void setOwner(Member member_not_exist) {
     }
 }
