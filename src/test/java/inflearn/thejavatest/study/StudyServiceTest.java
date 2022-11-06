@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.swing.text.html.Option;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -102,6 +101,27 @@ class StudyServiceTest {
         });
 
         assertEquals(Optional.empty(), memberService.findById(3L));
+    }
+
+    @Test
+    void Stubbing_Practice(@Mock MemberService memberService,
+                           @Mock StudyRepository studyRepository
+    ) {
+        Study study = new Study(10, "TEST");
+
+        //
+        Member member = new Member();
+        when(memberService.findById(1L)).thenReturn(Optional.of(member));
+        when(studyRepository.save(study)).thenReturn(study);
+        //
+
+        StudyService studyService = new StudyService(memberService, studyRepository);
+        // createNewStudy() 내부의 두 구현체가 동작시키는 메서드를, 위에서 스터빙으로 미리 정의해둔다.
+        Study newStudy = studyService.createNewStudy(1L, study);
+
+        assertNotNull(study.getName());
+        assertEquals("TEST", newStudy.getName());
+        assertEquals(10, newStudy.getLimit());
     }
 }
 
