@@ -1,5 +1,6 @@
 package inflearn.thejavatest.study;
 
+import inflearn.thejavatest.StudyStatus;
 import inflearn.thejavatest.domain.Member;
 import inflearn.thejavatest.domain.Study;
 import inflearn.thejavatest.member.MemberService;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -14,11 +16,18 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 class StudyServiceTest {
+
+    @Mock
+    MemberService memberService;
+    @Mock
+    StudyRepository studyRepository;
     public static final String EMAIL = "hoo@email.com";
 
 //    @Mock
@@ -121,7 +130,60 @@ class StudyServiceTest {
 
         assertNotNull(study.getName());
         assertEquals("TEST", newStudy.getName());
-        assertEquals(10, newStudy.getLimit());
+        assertEquals(10, newStudy.getLimitCount());
+
+        // notify() 메서드가 한번은 실행됐다고 검증하는 것
+        verify(memberService, times(1)).notify(study);
+        verify(memberService, times(1)).notify(member);
+        verify(memberService, never()).validate(any());  // 이걸 굳이 테스트 해야하나?
+
+        // 작동 순서를 테스트
+        InOrder inOrder = inOrder(memberService);
+        inOrder.verify(memberService).notify(study);
+        inOrder.verify(memberService).notify(member);
+
+    }
+
+
+    @Test
+    void BDD_Style(@Mock MemberService memberService,
+                           @Mock StudyRepository studyRepository
+    ) {
+        StudyService studyService = new StudyService(memberService, studyRepository);
+        assertNotNull(studyService);
+
+        Study study = new Study(10, "TEST");
+        Member member = new Member();
+        member.setId(1L);
+
+        // Given
+        given(memberService.findById(1L)).willReturn(Optional.of(member));
+        given(studyRepository.save(study)).willReturn(study);
+
+        // When
+        studyService.createNewStudy(1L, study);
+
+        // Then
+        assertEquals(member.getId(), 1L);
+        then(memberService).should(times(1)).notify(study);
+    }
+
+    @Test
+    void 스터디를_공개한다() {
+
+        // Given
+        StudyService studyService = new StudyService(memberService, studyRepository);
+        Study study = new Study(10, "TEST");
+        assertNotNull(studyService);
+        given(studyRepository.save(study)).willReturn(study);
+
+        // When
+        studyService.openStudy(study);
+
+        // Then
+        assertEquals(StudyStatus.OPENED, study.getStatus());
+        assertNotNull(study.getOpenedDateTime());
+        then(memberService).should().notify(study);
     }
 }
 
